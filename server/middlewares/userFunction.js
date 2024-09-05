@@ -56,13 +56,16 @@ export const followValidationMiddleware = (req, res, next) => {
   next();
 };
 
-export const postValidation = Joi.object({
-  userId: Joi.string().uuid().required(),
-  eventId: Joi.string().uuid().required(),
-  levelId: Joi.string().uuid().required(),
-  image: Joi.string().uri().required(), // Assuming image is a URL
-  content: Joi.string().required(),
-});
+export const postValidationMiddleware = (req, res, next) => {
+  const { error } = postValidation.validate(req.body);
+  if (error) {
+    return res.status(400).json({
+      message: "Send post data in the correct format",
+      details: error.details,
+    });
+  }
+  next();
+};
 
 // Middleware for JWT authentication
 export const authMiddleware = (req, res, next) => {

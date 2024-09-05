@@ -19,4 +19,11 @@ const followValidation = Joi.object({
   followId: Joi.string().uuid().required(), // Assuming followId is a UUID string type
 });
 
-export { userValidation, eventValidation, followValidation };
+const postValidation = Joi.object({
+  eventId: Joi.string().uuid().required(),
+  levelId: Joi.string().uuid().required(),
+  image: Joi.string().uri().required(),
+  content: Joi.string().required(),
+});
+
+export { userValidation, eventValidation, followValidation};
