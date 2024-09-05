@@ -8,65 +8,66 @@ datasource db {
 }
 
 model User {
-  id             Int       @id @default(autoincrement())
+  id             String    @id @default(uuid())
   username       String
   email          String    @unique
   password       String
   followers      Follow[]  @relation("followers")
   following      Follow[]  @relation("following")
-  followCount    BigInt
-  followingCount BigInt
-  event     Event[]
-  post      Post[]
+  followCount    Int       @default(0)
+  followingCount Int       @default(0)
+  events         Event[]
+  posts          Post[]
 }
 
 model Event {
-  id         Int        @id @default(autoincrement())
-  eventName  String
-  userId     Int
-  user       User       @relation(fields: [userId], references: [id])
-  eventDays  Int
-  dayFrequency Int
-  status     eventStatus
-  createdAt  DateTime   @default(now())
-  updatedAt  DateTime   @updatedAt
-  levels     Level[]
-  post       Post[]
+  id             String    @id @default(uuid())
+  eventName      String
+  userId         String
+  user           User      @relation(fields: [userId], references: [id])
+  eventDays      Int
+  dayFrequency   Int
+  status         eventStatus
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  levels         Level[]
+  posts          Post[]
 }
 
 model Level {
-  id         Int       @id @default(autoincrement())
-  eventId    Int
-  levelNumber Int
-  event      Event     @relation(fields: [eventId], references: [id])
-  dueDate    DateTime
-  isCompleted Boolean  @default(false)
-  createdAt  DateTime  @default(now())
-  post       Post[]
+  id            String    @id @default(uuid())
+  eventId       String
+  levelNumber   Int
+  event         Event     @relation(fields: [eventId], references: [id])
+  dueDate       DateTime
+  isCompleted   Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  posts         Post[]
 }
 
 model Post {
-  id          Int       @id @default(autoincrement())
-  userId      Int
-  eventId     Int
-  levelId     Int
-  user        User      @relation(fields: [userId], references: [id])
-  event       Event     @relation(fields: [eventId], references: [id])
-  level       Level     @relation(fields: [levelId], references: [id])
+  id          String    @id @default(uuid())
+  userId      String
+  eventId     String
+  levelId     String
+  image       String
+  user        User     @relation(fields: [userId], references: [id])
+  event       Event    @relation(fields: [eventId], references: [id])
+  level       Level    @relation(fields: [levelId], references: [id])
   content     String
-  postedAt    DateTime  @default(now())
-  createdAt   DateTime  @default(now())
+  postedAt    DateTime @default(now())
+  createdAt   DateTime @default(now())
 }
 
 model Follow {
-  id         Int   @id @default(autoincrement())
-  followerId Int
-  followingId Int
+  id            String  @id @default(uuid())
+  followerId    String
+  followingId   String
 
-  follower   User  @relation("followers", fields: [followerId], references: [id])
-  following  User  @relation("following", fields: [followingId], references: [id])
+  follower      User    @relation("followers", fields: [followerId], references: [id])
+  following     User    @relation("following", fields: [followingId], references: [id])
 
-  @@unique([followerId, followingId]) // Ensures a unique follow relationship
+  @@unique([followerId, followingId])
 }
 
 enum eventStatus {
