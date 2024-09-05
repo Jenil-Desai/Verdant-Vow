@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             Int       @id @default(autoincrement())
+  username       String
+  email          String    @unique
+  password       String
+  followers      Follow[]  @relation("followers")
+  following      Follow[]  @relation("following")
+  followCount    BigInt
+  followingCount BigInt
+  event     Event[]
+  post      Post[]
+}
+
+model Event {
+  id         Int        @id @default(autoincrement())
+  eventName  String
+  userId     Int
+  user       User       @relation(fields: [userId], references: [id])
+  eventDays  Int
+  dayFrequency Int
+  status     eventStatus
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  levels     Level[]
+  post       Post[]
+}
+
+model Level {
+  id         Int       @id @default(autoincrement())
+  eventId    Int
+  levelNumber Int
+  event      Event     @relation(fields: [eventId], references: [id])
+  dueDate    DateTime
+  isCompleted Boolean  @default(false)
+  createdAt  DateTime  @default(now())
+  post       Post[]
+}
+
+model Post {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  eventId     Int
+  levelId     Int
+  user        User      @relation(fields: [userId], references: [id])
+  event       Event     @relation(fields: [eventId], references: [id])
+  level       Level     @relation(fields: [levelId], references: [id])
+  content     String
+  postedAt    DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+}
+
+model Follow {
+  id         Int   @id @default(autoincrement())
+  followerId Int
+  followingId Int
+
+  follower   User  @relation("followers", fields: [followerId], references: [id])
+  following  User  @relation("following", fields: [followingId], references: [id])
+
+  @@unique([followerId, followingId]) // Ensures a unique follow relationship
+}
+
+enum eventStatus {
+  ACTIVE
+  PENDING
+  INCOMPLETE
+}
