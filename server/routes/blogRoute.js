@@ -2,15 +2,31 @@ import express from 'express';
 import { authMiddleware } from '../middlewares/userFunction.js';
 import { commentBlog, createBlog, deleteBlog, deleteComment, editComment, likeBlog, unlikeBlog, updateBlog } from '../controllers/blogController.js';
 import { activeUserMiddleware } from '../validations/userValidations.js';
+
 const blogRouter = express.Router();
 
+// Route to create a new blog
 blogRouter.post("/createBlog", activeUserMiddleware, authMiddleware, createBlog);
-blogRouter.put("/updateBlog", activeUserMiddleware, authMiddleware, updateBlog);
-blogRouter.delete("/deleteBlog", activeUserMiddleware,authMiddleware, deleteBlog);
-blogRouter.post("/like", activeUserMiddleware, authMiddleware, likeBlog);
-blogRouter.put("/unLike", activeUserMiddleware, authMiddleware, unlikeBlog);
-blogRouter.post("/comment", activeUserMiddleware, authMiddleware, commentBlog);
-blogRouter.put("/updateComment", activeUserMiddleware, authMiddleware, editComment);
-blogRouter.delete("/deleteComment", activeUserMiddleware, authMiddleware, deleteComment);
 
-export {blogRouter}
+// Route to update an existing blog
+blogRouter.put("/updateBlog/:blogId", activeUserMiddleware, authMiddleware, updateBlog);
+
+// Route to delete a blog
+blogRouter.delete("/deleteBlog/:blogId", activeUserMiddleware, authMiddleware, deleteBlog);
+
+// Route to like a blog
+blogRouter.post("/likeBlog/:blogId", activeUserMiddleware, authMiddleware, likeBlog);
+
+// Route to unlike a blog
+blogRouter.post("/unlikeBlog/:blogId", activeUserMiddleware, authMiddleware, unlikeBlog);
+
+// Route to add a comment to a blog
+blogRouter.post("/comment/:blogId", activeUserMiddleware, authMiddleware, commentBlog);
+
+// Route to update a comment on a blog
+blogRouter.patch("/updateComment/:commentId", activeUserMiddleware, authMiddleware, editComment);
+
+// Route to delete a comment from a blog
+blogRouter.delete("/deleteComment/:commentId", activeUserMiddleware, authMiddleware, deleteComment);
+
+export { blogRouter };

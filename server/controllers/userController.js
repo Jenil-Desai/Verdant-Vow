@@ -30,6 +30,11 @@ const signup = async (req, res) => {
       return res.status(400).json({ message: "User with the given username is already registered" });
     }
 
+    if (await client.user.findFirst({ where: { email } })) {
+      return res.status(400).json({ message: "Email is already registered" });
+    }
+    
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const otp = generateOTP();
     await client.user.create({

@@ -1,14 +1,17 @@
-import express from 'express'
-import { authMiddleware, postValidationMiddleware} from '../middlewares/userFunction.js';
+import express from 'express';
+import { authMiddleware, postValidationMiddleware } from '../middlewares/userFunction.js';
 import { createPost, deletePost, updatePost } from '../controllers/postController.js';
 import { activeUserMiddleware } from '../validations/userValidations.js';
 
 const postRoute = express.Router();
 
-postRoute.post("/createPost", activeUserMiddleware, authMiddleware, createPost)
-postRoute.put("/updatePost", activeUserMiddleware, authMiddleware, updatePost)
-postRoute.delete("/deletePost", activeUserMiddleware, authMiddleware, deletePost)
+// Route to create a post
+postRoute.post("/createPost", activeUserMiddleware, postValidationMiddleware, authMiddleware, createPost);
 
-export{
-    postRoute
-}
+// Route to update a post
+postRoute.put("/updatePost", activeUserMiddleware, authMiddleware, updatePost);
+
+// Route to delete a post
+postRoute.delete("/deletePost", activeUserMiddleware, authMiddleware, deletePost);
+
+export { postRoute };

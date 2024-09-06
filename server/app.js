@@ -1,34 +1,29 @@
 import express from 'express';
 const app = express();
 import cors from 'cors';
-import { userRoute } from './routes/userRoute.js';
 import dotenv from 'dotenv';
+import http from 'http';
+import { userRoute } from './routes/userRoute.js';
 import { eventRouter } from './routes/eventRoute.js';
 import { followRoutes } from './routes/followRoute.js';
 import { postRoute } from './routes/postRoute.js';
 import { blogRouter } from './routes/blogRoute.js';
-import http from 'http';
 import { initSocket } from './socket/socket.js';
-
-const server = http.createServer(app);
-
-initSocket(server);
-
-
-
 
 dotenv.config();
 
+const server = http.createServer(app);
+initSocket(server);  // Ensure this function is non-blocking
 
 app.use(express.json());
-app.use(cors());
+app.use(cors({ origin: process.env.ALLOWED_ORIGINS || '*' })); // Customize as needed
 
 // Register routes
 app.use('/api/v1/user', userRoute);
 app.use('/api/v1/event', eventRouter);
 app.use('/api/v1/follow', followRoutes);
 app.use('/api/v1/post', postRoute);
-app.use("/api/v1/blog", blogRouter);
+app.use('/api/v1/blog', blogRouter);
 
 // 404 Not Found Handler
 app.use((req, res) => {
@@ -53,4 +48,13 @@ const PORT = process.env.PORT || 3000;
 
 server.listen(PORT, () => {
   console.log(`Server is listening on port ${PORT}`);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM signal received: closing HTTP server');
+  server.close(() => {
+    console.log('HTTP server closed');
+    // Close database connections or other cleanup tasks here
+  });
 });

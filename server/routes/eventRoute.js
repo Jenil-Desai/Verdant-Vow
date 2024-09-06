@@ -1,13 +1,17 @@
-import express from 'express'
-import checkEventStatus, {authMiddleware, eventValidationMiddleware} from '../middlewares/userFunction.js';
+import express from 'express';
+import checkEventStatus, { authMiddleware, eventValidationMiddleware } from '../middlewares/userFunction.js';
 import { createEvent, deleteEvent, updateEvent } from '../controllers/eventController.js';
 import { activeUserMiddleware } from '../validations/userValidations.js';
+
 const eventRouter = express.Router();
 
-eventRouter.post("/createEvent", activeUserMiddleware,  eventValidationMiddleware,  authMiddleware, createEvent);
-eventRouter.put("/updateEvent", checkEventStatus,  activeUserMiddleware, authMiddleware, updateEvent);
-eventRouter.delete("/deleteEvent", checkEventStatus,  activeUserMiddleware, authMiddleware, deleteEvent);
+// Route to create a new event
+eventRouter.post("/createEvent", activeUserMiddleware, eventValidationMiddleware, authMiddleware, createEvent);
 
-export {
-    eventRouter
-}
+// Route to update an existing event
+eventRouter.put("/updateEvent/:eventId", checkEventStatus, activeUserMiddleware, authMiddleware, updateEvent);
+
+// Route to delete an event
+eventRouter.delete("/deleteEvent/:eventId", checkEventStatus, activeUserMiddleware, authMiddleware, deleteEvent);
+
+export { eventRouter };
