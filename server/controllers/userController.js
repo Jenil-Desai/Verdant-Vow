@@ -1,74 +1,157 @@
-// userController.js
-import express from "express";
 import { PrismaClient } from "@prisma/client";
 import jwt from "jsonwebtoken";
-import bcrypt from 'bcrypt'
+import bcrypt from "bcrypt";
+import nodemailer from "nodemailer";
 
 const client = new PrismaClient();
+const OTP_EXPIRATION_TIME = 10 * 60 * 1000;
+
+const transporter = nodemailer.createTransport({
+  service: "Gmail",
+  auth: {
+    user: process.env.EMAIL,
+    pass: process.env.EMAIL_PASSWORD,
+  },
+});
+
+const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 const signup = async (req, res) => {
   try {
-    const body = req.body;
-    const existingUser = await client.user.findFirst({
-      where: {
-        username: body.username,
-      },
-    });
+    const { username, email, password } = req.body;
+    const existingUser = await client.user.findFirst({ where: { username } });
 
     if (existingUser) {
-      return res.json({
-        message: "User with the given username is already registered",
-      });
+      return res.status(400).json({ message: "User with the given username is already registered" });
     }
-    const saltRound = 10;
-    const hashedPassword = await bcrypt.hash(body.password, saltRound)
-    const createUser = await client.user.create({
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const otp = generateOTP();
+    await client.user.create({
       data: {
-        username: body.username,
-        email: body.email,
-        password: hashedPassword
+        username,
+        email,
+        password: hashedPassword,
+        otp,
+        otpExpiresAt: new Date(Date.now() + OTP_EXPIRATION_TIME),
+        isActive: false, // User is inactive until OTP is verified
       },
     });
 
-    const token = jwt.sign({ email: createUser.email, userId: createUser.id }, process.env.JWT_SECRET);
-    res.json({
-      token,
+    await transporter.sendMail({
+      to: email,
+      subject: "Verify Your Email",
+      text: `Your OTP is ${otp}`,
     });
+
+    res.json({ message: "Signup successful. Please verify your email using the OTP sent to your email address." });
   } catch (e) {
     console.log("Signup error", e);
-    res.status(500).json({
-      message: "Internal Server Error",
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+const verifyOTP = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    const user = await client.user.findFirst({
+      where: {
+        email,
+        otp,
+        otpExpiresAt: { gt: new Date() },
+      },
     });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired OTP." });
+    }
+
+    await client.user.update({
+      where: { id: user.id },
+      data: { otp: null, otpExpiresAt: null, isActive: true }, // Activate user after verification
+    });
+
+    const token = jwt.sign({ email: user.email, userId: user.id }, process.env.JWT_SECRET);
+    res.json({ message: "OTP verified successfully", token });
+  } catch (e) {
+    console.log("OTP Verification error", e);
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
 const signin = async (req, res) => {
   try {
-    const body = req.body
-    const usernameCheck = await client.user.findFirst({
-        where: {
-            username: body.username
-        }
-    })
-    if (!usernameCheck){
-        return res.json({
-            message: "Username or Password is incorrect"
-        })
+    const { username, password } = req.body;
+    const user = await client.user.findFirst({ where: { username } });
+
+    if (!user || !(await bcrypt.compare(password, user.password)) || !user.isActive) {
+      return res.status(400).json({ message: "Username or password is incorrect or user is not activated" });
     }
-    const comparePassword = await bcrypt.compare(body.password, usernameCheck.password)
-    if (!comparePassword){
-        return res.json({
-            message: "username or password is incorrect"
-        })
-    }
-    const token = jwt.sign({email: usernameCheck.email, userId: usernameCheck.id}, process.env.JWT_SECRET)
-    res.json({ message: token});
+
+    const token = jwt.sign({ email: user.email, userId: user.id }, process.env.JWT_SECRET);
+    res.json({ message: token });
   } catch (e) {
     console.log("Signin error", e);
-    res.status(500).json({
-      message: "Internal Server Error",
-    });
+    res.status(500).json({ message: "Internal Server Error" });
   }
 };
 
-export { signup, signin };
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const user = await client.user.findFirst({ where: { email } });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    const otp = generateOTP();
+    await client.user.update({
+      where: { id: user.id },
+      data: { otp, otpExpiresAt: new Date(Date.now() + OTP_EXPIRATION_TIME) },
+    });
+
+    await transporter.sendMail({
+      to: email,
+      subject: "Reset Your Password",
+      text: `Your OTP for password reset is ${otp}`,
+    });
+
+    res.json({ message: "OTP sent to your email address." });
+  } catch (e) {
+    console.log("Forgot Password error", e);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+
+    const user = await client.user.findFirst({
+      where: {
+        email,
+        otp,
+        otpExpiresAt: { gt: new Date() },
+      },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired OTP." });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await client.user.update({
+      where: { id: user.id },
+      data: { password: hashedPassword, otp: null, otpExpiresAt: null },
+    });
+
+    res.json({ message: "Password reset successfully." });
+  } catch (e) {
+    console.log("Reset Password error", e);
+    res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export { signup, signin, verifyOTP, forgotPassword, resetPassword };

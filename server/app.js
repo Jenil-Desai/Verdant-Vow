@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import { eventRouter } from './routes/eventRoute.js';
 import { followRoutes } from './routes/followRoute.js';
 import { postRoute } from './routes/postRoute.js';
+import { blogRouter } from './routes/blogRoute.js';
 
 dotenv.config();
 
@@ -18,6 +19,7 @@ app.use('/api/v1/user', userRoute);
 app.use('/api/v1/event', eventRouter);
 app.use('/api/v1/follow', followRoutes);
 app.use('/api/v1/post', postRoute);
+app.use("/api/v1/blog", blogRouter);
 
 // 404 Not Found Handler
 app.use((req, res) => {

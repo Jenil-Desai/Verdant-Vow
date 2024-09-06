@@ -26,4 +26,26 @@ const postValidation = Joi.object({
   content: Joi.string().required(),
 });
 
+// Middleware to check if the user is active
+export const activeUserMiddleware = async (req, res, next) => {
+    try {
+      const user = await client.user.findUnique({
+        where: { id: req.userId },
+      });
+  
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+  
+      if (!user.isActive) {
+        return res.status(403).json({ message: 'Account not activated. Please verify your email.' });
+      }
+  
+      next();
+    } catch (err) {
+      console.error('Active user check error:', err);
+      res.status(500).json({ message: 'Internal Server Error' });
+    }
+  };
+
 export { userValidation, eventValidation, followValidation};
