@@ -1,4 +1,5 @@
 import express from 'express';
+const app = express();
 import cors from 'cors';
 import { userRoute } from './routes/userRoute.js';
 import dotenv from 'dotenv';
@@ -6,10 +7,18 @@ import { eventRouter } from './routes/eventRoute.js';
 import { followRoutes } from './routes/followRoute.js';
 import { postRoute } from './routes/postRoute.js';
 import { blogRouter } from './routes/blogRoute.js';
+import http from 'http';
+import { initSocket } from './socket/socket.js';
+
+const server = http.createServer(app);
+
+initSocket(server);
+
+
+
 
 dotenv.config();
 
-const app = express();
 
 app.use(express.json());
 app.use(cors());
@@ -42,6 +51,6 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server is listening on port ${PORT}`);
 });

@@ -1,5 +1,7 @@
 import Joi from 'joi';
 import jwt from 'jsonwebtoken';
+import { PrismaClient } from '@prisma/client';
+const client = new PrismaClient();
 
 // User validation schema
 const userValidation = Joi.object({
@@ -87,3 +89,33 @@ export const authMiddleware = (req, res, next) => {
     res.status(500).json({ message: 'Internal Server Error' });
   }
 };
+
+
+//middleware to check the status of the event
+const checkEventStatus = async (req, res, next) => {
+  const { eventId } = req.body;
+
+  try {
+    const event = await client.event.findFirst({
+      where: {
+        id: eventId,
+        userId: req.userId,
+      },
+    });
+
+    if (event.status === 'INCOMPLETE') {
+      return res.status(403).json({
+        message: 'This event is marked as incomplete and cannot be modified.',
+      });
+    }
+
+    next();
+  } catch (error) {
+    console.error('Error checking event status:', error);
+    res.status(500).json({
+      message: 'Internal Server Error',
+    });
+  }
+};
+
+export default checkEventStatus;

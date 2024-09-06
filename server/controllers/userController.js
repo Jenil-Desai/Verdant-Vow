@@ -2,12 +2,17 @@ import { PrismaClient } from "@prisma/client";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import nodemailer from "nodemailer";
+import dotenv from 'dotenv';
+
+dotenv.config(); 
 
 const client = new PrismaClient();
 const OTP_EXPIRATION_TIME = 10 * 60 * 1000;
 
 const transporter = nodemailer.createTransport({
+  name: "Gmail",
   service: "Gmail",
+  port: 465,
   auth: {
     user: process.env.EMAIL,
     pass: process.env.EMAIL_PASSWORD,

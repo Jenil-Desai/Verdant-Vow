@@ -1,5 +1,6 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
+import { io } from '../socket/socket.js';
 
 const client = new PrismaClient();
 
@@ -47,6 +48,23 @@ const followRoute = async (req, res) => {
         where: { id: followId },
         data: { followCount: { increment: 1 } },
       });
+
+      // Send notification to the followed user
+      const notification = await prisma.notification.create({
+        data: {
+          userId: followId,
+          message: `User ${req.userId} has started following you.`,
+          type: 'follow',
+          read: false,
+        },
+      });
+
+      io.to(`user_${followId}`).emit('notification', {
+        type: 'follow',
+        message: `User ${req.userId} has started following you.`,
+        followerId: req.userId,
+      });
+
     });
 
     res.json({ message: 'You have successfully followed this user' });

@@ -1,6 +1,8 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
-import dayjs from 'dayjs'; 
+import dayjs from 'dayjs';
+import cron from 'node-cron';
+import { io } from '../socket/socket.js';
 
 const client = new PrismaClient();
 
@@ -13,14 +15,14 @@ const createEvent = async (req, res) => {
         eventName,
         eventDays,
         dayFrequency,
-        status: "PENDING",
+        status: 'PENDING',
         userId: req.userId,
-      }
+      },
     });
 
     const levelsCount = Math.ceil(eventDays / dayFrequency);
     const startDate = new Date();
-    
+
     for (let i = 1; i <= levelsCount; i++) {
       const dueDate = dayjs(startDate).add((i - 1) * dayFrequency, 'day').toDate();
       await client.level.create({
@@ -28,19 +30,19 @@ const createEvent = async (req, res) => {
           eventId: event.id,
           levelNumber: i,
           dueDate,
-          isCompleted: false
-        }
+          isCompleted: false,
+        },
       });
     }
 
     res.status(201).json({
-      message: "Event created successfully with levels and due dates.",
-      event
+      message: 'Event created successfully with levels and due dates.',
+      event,
     });
   } catch (e) {
-    console.error("Error creating event:", e);
+    console.error('Error creating event:', e);
     res.status(500).json({
-      message: "Internal Server Error"
+      message: 'Internal Server Error',
     });
   }
 };
@@ -52,13 +54,13 @@ const updateEvent = async (req, res) => {
     const event = await client.event.findFirst({
       where: {
         id,
-        userId: req.userId
+        userId: req.userId,
       },
     });
 
     if (!event) {
       return res.status(403).json({
-        message: "Event does not exist or you are not authorized to update this event."
+        message: 'Event does not exist or you are not authorized to update this event.',
       });
     }
 
@@ -68,7 +70,7 @@ const updateEvent = async (req, res) => {
         eventName,
         eventDays,
         dayFrequency,
-        status: "PENDING",
+        status: 'PENDING',
       },
     });
 
@@ -88,10 +90,7 @@ const updateEvent = async (req, res) => {
     const startDate = new Date();
     for (let i = 1; i <= levelsCount; i++) {
       const dueDate = dayjs(startDate).add((i - 1) * dayFrequency, 'day').toDate();
-
-      const existingLevel = existingLevels.find(
-        (level) => level.levelNumber === i
-      );
+      const existingLevel = existingLevels.find((level) => level.levelNumber === i);
 
       if (existingLevel) {
         if (!existingLevel.isCompleted) {
@@ -113,13 +112,13 @@ const updateEvent = async (req, res) => {
     }
 
     res.status(201).json({
-      message: "Event updated successfully with adjusted levels and due dates.",
+      message: 'Event updated successfully with adjusted levels and due dates.',
       updatedEvent,
     });
   } catch (e) {
-    console.error("Error updating event:", e);
+    console.error('Error updating event:', e);
     res.status(500).json({
-      message: "Internal Server Error",
+      message: 'Internal Server Error',
     });
   }
 };
@@ -131,13 +130,13 @@ const deleteEvent = async (req, res) => {
     const event = await client.event.findFirst({
       where: {
         id: eventId,
-        userId: req.userId
+        userId: req.userId,
       },
     });
 
     if (!event) {
       return res.status(403).json({
-        message: "Event does not exist or you are not authorized to delete this event."
+        message: 'Event does not exist or you are not authorized to delete this event.',
       });
     }
 
@@ -152,12 +151,12 @@ const deleteEvent = async (req, res) => {
     });
 
     res.json({
-      message: "Event and associated levels successfully deleted",
+      message: 'Event and associated levels successfully deleted',
     });
   } catch (error) {
     console.error('Error deleting event:', error);
     res.status(500).json({
-      message: "An error occurred while deleting the event",
+      message: 'An error occurred while deleting the event',
       error: error.message,
     });
   } finally {
@@ -165,8 +164,63 @@ const deleteEvent = async (req, res) => {
   }
 };
 
-export {
-  createEvent,
-  updateEvent,
-  deleteEvent
-};
+// Cron job to update event status and send notifications
+cron.schedule('0 0 * * *', async () => {
+  try {
+    const events = await client.event.findMany({
+      include: {
+        levels: true,
+        user: true,
+      },
+    });
+
+    for (const event of events) {
+      const overdueLevels = event.levels.filter(
+        (level) => !level.isCompleted && dayjs().isAfter(level.dueDate)
+      );
+      if (overdueLevels.length >= 3) {
+        await client.event.update({
+          where: { id: event.id },
+          data: { status: 'INCOMPLETE' },
+        });
+
+        // Store notification for event disqualification
+        await client.notification.create({
+          data: {
+            userId: event.userId,
+            eventId: event.id,
+            message: `Your event "${event.eventName}" has been marked as INCOMPLETE due to missing posts.`,
+            type: 'EVENT_INCOMPLETE',
+            read: false,
+          },
+        });
+      }
+
+      const todayDueLevels = event.levels.filter(
+        (level) => !level.isCompleted && dayjs(level.dueDate).isSame(dayjs(), 'day')
+      );
+
+      if (todayDueLevels.length > 0) {
+        io.to(event.user.id).emit('postPending', {
+          message: 'Your post for today is pending!',
+          eventId: event.id,
+        });
+
+        // Store notification for pending post
+        await client.notification.create({
+          data: {
+            userId: event.userId,
+            eventId: event.id,
+            message: 'Your post for today is pending!',
+            type: 'POST_PENDING',
+            read: false,
+          },
+        });
+      }
+    }
+  } catch (error) {
+    console.error('Error updating event statuses:', error);
+  }
+});
+
+export { createEvent, updateEvent, deleteEvent };
