@@ -288,4 +288,4 @@ const getLevels = async(req, res)=>{
 
 
 
-export { createEvent, updateEvent, deleteEvent, allEventsCompleted, allEventsPending, allEventsIncompleted, getEvent, getLevels };
+export { createEvent, updateEvent, deleteEvent,  getEvent, getLevels, allEvents };
