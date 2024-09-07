@@ -315,4 +315,25 @@ const getEvent = async(req, res)=>{
   }
 }
 
-export { createEvent, updateEvent, deleteEvent, allEventsCompleted, allEventsPending, allEventsIncompleted, getEvent };
+const getLevels = async(req, res)=>{
+  try{
+    const level = await client.level.findMany({
+      where: {
+        eventId: req.body.userId
+      }
+    })
+
+    if(!level){
+      return res.json({
+        message: "Something went wrong"
+      })
+    }
+  } catch(e){
+    console.log(e);
+    res.json({
+      message: "Something Went Wrong"
+    })
+  }
+}
+
+export { createEvent, updateEvent, deleteEvent, allEventsCompleted, allEventsPending, allEventsIncompleted, getEvent, getLevels };

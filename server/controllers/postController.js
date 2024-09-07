@@ -150,4 +150,24 @@ const deletePost = async (req, res) => {
   }
 };
 
-export { createPost, updatePost, deletePost };
+const getAllPosts = async(req, res)=>{
+  try{
+    const posts = await client.post.findMany({
+      where: {
+        eventId: req.body.eventId
+      }
+    })
+    if(!posts){
+      return res.json({
+        message: "Something went wrong"
+      })
+    }
+  } catch(e){
+    console.log(e);
+    res.json({
+      message: "Something went wrong"
+    })
+  }
+}
+
+export { createPost, updatePost, deletePost, getAllPosts };
