@@ -164,4 +164,33 @@ const resetPassword = async (req, res) => {
   }
 };
 
-export { signup, signin, verifyOTP, forgotPassword, resetPassword };
+
+//get routes
+const getUsername = async(req, res)=>{
+  try{
+    const user = await client.user.findFirst({
+      where: {
+        id: req.userId
+      }
+    })
+
+    if(!user){
+      return res.json({
+        message: "something went wrong"
+      })
+    }
+
+    res.json({
+      user
+    })
+  } catch(e){
+    console.log(e);
+    res.json({
+      message: "something went wrong"
+    })
+  }
+}
+
+
+
+export { signup, signin, verifyOTP, forgotPassword, resetPassword, getUsername };

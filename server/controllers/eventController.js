@@ -223,4 +223,96 @@ cron.schedule('0 0 * * *', async () => {
   }
 });
 
-export { createEvent, updateEvent, deleteEvent };
+const allEventsPending = async(req, res)=>{
+  try{
+    const events = await client.event.findMany({
+      where: {
+        userId: req.userId,
+        status: "PENDING"
+      }
+    })
+
+    if(!events){
+      return res.json({
+        message: "something went wrong"
+      })
+    }
+    res.json({
+      allEvents
+    })
+  } catch(e){
+    console.log(e);
+    res.json({
+      message: "someting went wrong"
+    })
+  }
+}
+
+const allEventsCompleted = async(req, res)=>{
+  try{
+    const events  = await client.event.findMany({
+      where: {
+        userId: req.userId,
+        status: "COMPLETED"
+      }
+    })
+
+    if(!events){
+      return res.json({
+        message: "no event completed"
+      })
+    }
+
+    res.json({
+      events
+    })
+  } catch(e){
+    console.log(e);
+    res.json({
+      message: "Something went wrong"
+    })
+  }
+}
+
+const allEventsIncompleted = async(req, res)=>{
+  try{
+    const events = await client.event.findMany({
+      where: {
+        userId: req.userId,
+        status: "INCOMPLETE"
+      }
+    })
+
+    if(!events){
+      return res.json({
+        message: "Something went wrong"
+      })
+    }
+  } catch(e){
+    console.log(e)
+  }
+}
+
+const getEvent = async(req, res)=>{
+  try{
+    const {userId, eventId} = req.body;
+    const event = await client.event.findFirst({
+      where:{
+        userId: req.userId, 
+        id: eventId
+      }
+    })
+
+    if(!event){
+      return res.json({
+        message: "Something went wrong"
+      })
+    }
+  } catch(e){
+    res.json({
+      message: "Something went wrong"
+    })
+  }
+}
+
+export { createEvent, updateEvent, deleteEvent, allEventsCompleted, allEventsPending, allEventsIncompleted, getEvent };

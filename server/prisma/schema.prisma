@@ -12,6 +12,9 @@ model User {
   username       String         @unique
   email          String         @unique
   password       String
+  firstname      String
+  lastname       String
+  bio            String
   otp            String?        // Field for OTP
   otpExpiresAt   DateTime?      // Field for OTP expiration
   isActive       Boolean        @default(false) // Field to check if user is activated
@@ -123,7 +126,7 @@ model Notification {
 }
 
 enum eventStatus {
-  ACTIVE
+  COMPLETED
   PENDING
   INCOMPLETE
 }

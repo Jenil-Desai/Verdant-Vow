@@ -1,6 +1,7 @@
 import express from 'express';
-import { userValidationMiddleware } from '../middlewares/userFunction.js';
-import { signin, signup, verifyOTP, forgotPassword, resetPassword } from '../controllers/userController.js';
+import { authMiddleware, userValidationMiddleware } from '../middlewares/userFunction.js';
+import { signin, signup, verifyOTP, forgotPassword, resetPassword, getUsername } from '../controllers/userController.js';
+import { activeUserMiddleware } from '../validations/userValidations.js';
 
 const userRoute = express.Router();
 
@@ -18,5 +19,7 @@ userRoute.post("/forgot-password", forgotPassword);
 
 // Route for password reset
 userRoute.post("/reset-password", resetPassword);
+
+userRoute.get("/getUsers", activeUserMiddleware, authMiddleware, getUsername);
 
 export { userRoute };
