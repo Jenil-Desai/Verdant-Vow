@@ -14,12 +14,6 @@ eventRouter.put("/updateEvent/:eventId", checkEventStatus, activeUserMiddleware,
 // Route to delete an event
 eventRouter.delete("/deleteEvent/:eventId", checkEventStatus, activeUserMiddleware, authMiddleware, deleteEvent);
 
-eventRouter.get("/completeEvents", checkEventStatus, activeUserMiddleware, authMiddleware, allEventsCompleted);
-
-eventRouter.get("/incompleteEvents", checkEventStatus, activeUserMiddleware, authMiddleware, updateEvent);
-
-eventRouter.get("/pendingEvents", checkEventStatus, activeUserMiddleware, authMiddleware, allEventsPending);
-
 eventRouter.get("/getEvent", checkEventStatus, activeUserMiddleware, authMiddleware, getEvent);
 
 eventRouter.get("/getLevels", checkEventStatus, activeUserMiddleware, authMiddleware, getLevels);

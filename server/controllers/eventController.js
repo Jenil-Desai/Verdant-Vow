@@ -223,63 +223,11 @@ cron.schedule('0 0 * * *', async () => {
   }
 });
 
-const allEventsPending = async(req, res)=>{
+const allEvents = async(req, res)=>{
   try{
     const events = await client.event.findMany({
       where: {
-        userId: req.userId,
-        status: "PENDING"
-      }
-    })
-
-    if(!events){
-      return res.json({
-        message: "something went wrong"
-      })
-    }
-    res.json({
-      allEvents
-    })
-  } catch(e){
-    console.log(e);
-    res.json({
-      message: "someting went wrong"
-    })
-  }
-}
-
-const allEventsCompleted = async(req, res)=>{
-  try{
-    const events  = await client.event.findMany({
-      where: {
-        userId: req.userId,
-        status: "COMPLETED"
-      }
-    })
-
-    if(!events){
-      return res.json({
-        message: "no event completed"
-      })
-    }
-
-    res.json({
-      events
-    })
-  } catch(e){
-    console.log(e);
-    res.json({
-      message: "Something went wrong"
-    })
-  }
-}
-
-const allEventsIncompleted = async(req, res)=>{
-  try{
-    const events = await client.event.findMany({
-      where: {
-        userId: req.userId,
-        status: "INCOMPLETE"
+        userId: req.userId
       }
     })
 
@@ -289,7 +237,9 @@ const allEventsIncompleted = async(req, res)=>{
       })
     }
   } catch(e){
-    console.log(e)
+    return res.json({
+      message: "Something Went Wrong"
+    })
   }
 }
 
@@ -335,5 +285,7 @@ const getLevels = async(req, res)=>{
     })
   }
 }
+
+
 
 export { createEvent, updateEvent, deleteEvent, allEventsCompleted, allEventsPending, allEventsIncompleted, getEvent, getLevels };
